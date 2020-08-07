@@ -22,7 +22,6 @@ io.on('connection', (socket) => {
   socket.emit('myData', { color: users[socket.id].color });
 
   socket.on('draw', (data) => {
-    console.log(data.image);
     if (data.image) image = data;
   });
 
