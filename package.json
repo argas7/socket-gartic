@@ -1,0 +1,11 @@
+{
+  "name": "socket-gartic",
+  "version": "1.0.0",
+  "main": "server.js",
+  "author": "argas7 <argas@cin.ufpe.br>",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.17.1",
+    "socket.io": "^2.3.0"
+  }
+}
