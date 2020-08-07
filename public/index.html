@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gartic?</title>
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+
+<body>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    #my-canvas {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      image-rendering: -moz-crisp-edges;
+      border-radius: 25px;
+      z-index: 100000000;
+      background-color: #ddd;
+      box-shadow: 1px 3px 6px #00000029;
+    }
+
+    #view {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      image-rendering: -moz-crisp-edges;
+      border-radius: 25px;
+      z-index: 100000000;
+      background-color: #ddd;
+      box-shadow: 1px 3px 6px #00000029;
+    }
+
+    #root {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+      background-image: url('https://web.whatsapp.com/pp?e=https%3A%2F%2Fpps.whatsapp.net%2Fv%2Ft61.24694-24%2F113678536_136993104710711_5724794144666713946_n.jpg%3Foh%3Da193dbed307d1ee5e1a131f5daceb04b%26oe%3D5F3217B7&t=l&u=558196275719-1576524937%40g.us&i=1595676375&n=dx652lA26LhSFdocbIX7MQD00RSHdPvDKyGE%2FdkrDFA%3D');
+      background-size: contain;
+    }
+
+    #container {
+      display: flex;
+      justify-content: space-evenly;
+      align-items: center;
+      width: 100%;
+    }
+
+    .topLeft,
+    .topRight,
+    .bottomLeft,
+    .bottomRight {
+      position: absolute;
+      width: 60%;
+      height: 200px;
+      transform: rotate(2deg);
+      box-shadow: 2px 2px 4px 2px black;
+    }
+
+    .topLeft,
+    .bottomRight {
+      background-color: blueviolet;
+    }
+
+    .topRight,
+    .bottomLeft {
+      background-color: limegreen;
+    }
+
+    .topLeft {
+      top: -150px;
+      left: -5%;
+    }
+
+    .topRight {
+      top: -150px;
+      right: -5%;
+    }
+
+    .bottomLeft {
+      bottom: -150px;
+      left: -5%
+    }
+
+    .bottomRight {
+      bottom: -150px;
+      right: -5%;
+    }
+
+    .filter {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-color: black;
+      opacity: .3;
+      box-shadow: 10px 0px 0px 10000px #000000CC;
+    }
+  </style>
+  <div id="root">
+    <div class="filter"></div>
+    <h1 style="color: whitesmoke; z-index: 3;">Citi Draw</h1>
+    <div id="container">
+      <canvas id="my-canvas" width="400px" height="300px"></canvas>
+      <canvas id="view" width="400px" height="300px"></canvas>
+    </div>
+    <div class="topLeft"></div>
+    <div class="topRight"></div>
+    <div class="bottomLeft"></div>
+    <div class="bottomRight"></div>
+  </div>
+  <script>
+    const gameCanvas = document.getElementById('my-canvas');
+    const drawReceived = document.getElementById('view');
+    const context = gameCanvas.getContext('2d');
+    const drawCtx = drawReceived.getContext('2d');
+    const socket = io();
+    let color;
+
+    socket.on('connect', () => {
+      const playerId = socket.id;
+      console.log(`player conected: ${playerId}`);
+    });
+
+    socket.on('myData', (data) => {
+      console.log(data);
+      color = data.color;
+    });
+
+    socket.on('image', (socket) => {
+      console.log(socket);
+      if (socket) {
+        const { image } = socket;
+        console.log(image);
+        const blob = new Blob([image], { type: 'image/jpg' });
+        let blobUrl = URL.createObjectURL(blob);
+        return new Promise((resolve, reject) => {
+          let img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = err => reject(err);
+          img.src = blobUrl;
+        }).then(img => {
+          URL.revokeObjectURL(blobUrl);
+
+          let w = img.width;
+          let h = img.height;
+
+          let canvas = document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+
+          drawCtx.drawImage(img, 0, 0);
+        });
+      };
+    });
+
+    let flag = false;
+    let isDrawing = false;
+    let prevX = 0;
+    let currX = 0;
+    let prevY = 0;
+    let currY = 0;
+    let image = null;
+
+
+    gameCanvas.addEventListener('mousemove', (e) => {
+      findxy('move', e);
+    });
+    gameCanvas.addEventListener('mousedown', (e) => {
+      findxy('down', e);
+    });
+    gameCanvas.addEventListener('mouseup', (e) => {
+      findxy('up', e);
+    });
+    gameCanvas.addEventListener('mouseout', (e) => {
+      findxy('out', e);
+    });
+
+    function draw() {
+      context.beginPath();
+      context.moveTo(prevX, prevY);
+      context.lineTo(currX, currY);
+      context.strokeStyle = color || 'black';
+      context.lineWidth = 1;
+      context.stroke();
+    }
+
+    function findxy(move, event) {
+      if (move === 'down') {
+        prevX = currX;
+        prevY = currY;
+        currX = (event.clientX - gameCanvas.offsetLeft);
+        currY = (event.clientY - gameCanvas.offsetTop);
+        flag = true;
+        isDrawing = true;
+
+        if (isDrawing) {
+          context.beginPath();
+          context.fileStyle = currentColor;
+          context.fillRect(currX, currY, 1, 1);
+          context.closePath();
+          isDrawing = false;
+        }
+      }
+
+      if (move === 'up' || move === 'out') {
+        flag = false;
+      }
+
+      if (move === 'move') {
+        if (flag) {
+          prevX = currX;
+          prevY = currY;
+          currX = (event.clientX - gameCanvas.offsetLeft);
+          currY = (event.clientY - gameCanvas.offsetTop);
+
+          gameCanvas.toBlob(function (blob) {
+            image = blob;
+          });
+
+          socket.emit('draw', { image });
+          draw();
+        }
+      }
+    }
+  </script>
+</body>
