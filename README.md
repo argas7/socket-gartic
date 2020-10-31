@@ -13,4 +13,5 @@
 4.1. Using node: `node server.js` or `node .`;
 4.2. If you have nodemon: `nodemon server.js` or `nodemon`;
 
-5. Somethig like that screen should appear:
+5. Go to your localhost:3000 and start to play
+5.1. If you exposed this port with a software like ngrok, as example, you can shareable with your friends and draw together
